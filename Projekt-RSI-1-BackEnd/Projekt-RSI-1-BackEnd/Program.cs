@@ -3,6 +3,7 @@ using CoreWCF.Channels;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
 using Microsoft.EntityFrameworkCore;
+using Projekt_RSI_1_BackEnd.Handlers;
 using Projekt_RSI_1_BackEnd.Interfaces;
 using Projekt_RSI_1_BackEnd.services;
 
@@ -39,6 +40,11 @@ namespace Projekt_RSI_1_BackEnd
                 binding.MaxReceivedMessageSize = 10 * 1024 * 1024;
 
                 serviceBuilder.AddService<TrainRouteService>();
+                serviceBuilder.ConfigureServiceHostBase<TrainRouteService>(host =>
+                {
+                    string apiKeyFromConfig = builder.Configuration["Keys:ApiKey"];
+                    host.Description.Behaviors.Add(new ApiKeyBehavior(apiKeyFromConfig));
+                });
                 serviceBuilder.AddServiceEndpoint<TrainRouteService, ITrainRouteService>(binding, "/TrainRouteService");
 
                 var metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
