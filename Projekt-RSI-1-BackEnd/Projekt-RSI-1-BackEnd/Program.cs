@@ -19,6 +19,7 @@ namespace Projekt_RSI_1_BackEnd
             builder.Services.AddServiceModelServices();
             builder.Services.AddServiceModelMetadata();
             builder.Services.AddTransient<TrainRouteService>();
+            builder.Services.AddTransient<ReservationService>();
             builder.Services.AddSingleton<ServiceDebugBehavior>(new ServiceDebugBehavior { IncludeExceptionDetailInFaults = true });
 
             builder.WebHost.ConfigureKestrel(options =>
@@ -40,6 +41,9 @@ namespace Projekt_RSI_1_BackEnd
 
                 serviceBuilder.AddService<TrainRouteService>();
                 serviceBuilder.AddServiceEndpoint<TrainRouteService, ITrainRouteService>(binding, "/TrainRouteService");
+
+                serviceBuilder.AddService<ReservationService>();
+                serviceBuilder.AddServiceEndpoint<ReservationService, IReservationService>(binding, "/ReservationService");
 
                 var metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
                 metadataBehavior.HttpsGetEnabled = true;
