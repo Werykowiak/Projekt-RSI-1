@@ -16,7 +16,15 @@ namespace Projekt_RSI_1_BackEnd
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddDbContext<AppDbContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DBConnection")));
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowNuxt", policy =>
+                {
+                    policy.WithOrigins("https://localhost:3000") 
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
             builder.Services.AddServiceModelServices();
             builder.Services.AddServiceModelMetadata();
             builder.Services.AddTransient<TrainRouteService>();
@@ -32,6 +40,9 @@ namespace Projekt_RSI_1_BackEnd
             });
 
             var app = builder.Build();
+
+            app.UseRouting(); 
+            app.UseCors("AllowNuxt");
 
             app.UseServiceModel(serviceBuilder =>
             {
