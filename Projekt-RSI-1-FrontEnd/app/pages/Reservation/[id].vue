@@ -14,6 +14,39 @@ const routeDisplayName = `${departure} - ${arrival}`
 
 const loading = ref(false)
 
+function normalizeSoapResponse(text) {
+  if (!text) return ''
+
+  if (text.includes('<s:Envelope')) {
+    const start = text.indexOf('<s:Envelope')
+    const end = text.lastIndexOf('</s:Envelope>') + '</s:Envelope>'.length
+    return text.substring(start, end)
+  }
+
+  return text
+}
+
+function extractReservationIdFromResponse(text) {
+  const parser = new DOMParser()
+  const xmlDoc = parser.parseFromString(normalizeSoapResponse(text), 'text/xml')
+  const nodes = Array.from(xmlDoc.getElementsByTagName('*'))
+
+  const resultNode = nodes.find(el => el.localName === 'BuyTicketResult' || el.localName === 'reservationId' || el.localName === 'id')
+
+  if (!resultNode) return ''
+
+  if (resultNode.localName === 'reservationId' || resultNode.localName === 'id') {
+    return resultNode.textContent?.trim() || ''
+  }
+
+  const nestedId = Array.from(resultNode.getElementsByTagName('*')).find(el => el.localName === 'reservationId' || el.localName === 'id')
+  if (nestedId) {
+    return nestedId.textContent?.trim() || ''
+  }
+
+  return resultNode.textContent?.trim() || ''
+}
+
 // Zaktualizowałem nazwy pól pod twój model C# (passengerFirstName itd.)
 const reservation = ref({
   trainRouteId: routeId,
@@ -64,6 +97,13 @@ async function makeReservation() {
       }
     }
 
+    const responseText = await response.text()
+    const reservationId = extractReservationIdFromResponse(responseText)
+
+    if (!reservationId) {
+      throw new Error('Nie udało się odczytać ID rezerwacji z odpowiedzi serwera.')
+    }
+
     toast.add({
       title: 'Sukces!',
       description: `Zarezerwowano bilety na trasę ${routeDisplayName}.`,
@@ -71,7 +111,10 @@ async function makeReservation() {
       icon: 'i-heroicons-check-circle'
     })
     
-    router.push('/TrainRoutes')
+    router.push({
+      path: '/CheckReservation',
+      query: { id: reservationId }
+    })
   } catch (error) {
     console.error('Błąd:', error)
     
