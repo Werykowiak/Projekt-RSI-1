@@ -574,3 +574,6 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,aspnetcore,vue,visualstudiocode,visualstudio,nuxtjs
 Projekt-RSI-1-BackEnd/Projekt-RSI-1-BackEnd/appsettings.Development.json
+Projekt-RSI-1-FrontEnd/generate-cert.cjs
+Projekt-RSI-1-FrontEnd/localhost.pem
+Projekt-RSI-1-FrontEnd/localhost-key.pem

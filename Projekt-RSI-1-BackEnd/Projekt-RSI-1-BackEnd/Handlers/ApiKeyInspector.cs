@@ -21,7 +21,7 @@ namespace Projekt_RSI_1_BackEnd.Handlers
             int headerIndex = request.Headers.FindHeader(ApiKeyHeaderName, ApiKeyHeaderNamespace);
             string action = request.Headers.Action;
 
-            if (!action.Contains("AddTrainRoute") || !action.Contains("DeleteTrainRoute") || !action.Contains("EditTrainRoute"))
+            if (action.Contains("AddTrainRoute") || action.Contains("DeleteTrainRoute") || action.Contains("EditTrainRoute"))
             {
                 if (headerIndex < 0)
                 {

@@ -5,20 +5,32 @@ const trainRoutes = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const filters = ref({
+  departureCity: '',
+  arrivalCity: '',
+  departureDay: null
+})
+
 async function fetchTrainRoutes() {
   loading.value = true
   error.value = null
+  
+  let departureDayXml = ''
+  if (filters.value.departureDay) {
+    departureDayXml = `<tem:departureDate>${filters.value.departureDay}</tem:departureDate>`
+  }
 
   const soapXml = `
     <soapenv:Envelope 
         xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
         xmlns:tem="http://tempuri.org/" 
         xmlns:sec="http://projektrsi.security">
-       <soapenv:Header>
-          <sec:X-Api-Key>GIGATAJNYKLUCZDOAPI</sec:X-Api-Key>
-       </soapenv:Header>
        <soapenv:Body>
-          <tem:GetAllTrainRoutes/>
+          <tem:SearchTrainRoutes>
+             <tem:departureCity>${filters.value.departureCity}</tem:departureCity>
+             <tem:arrivalCity>${filters.value.arrivalCity}</tem:arrivalCity>
+             ${departureDayXml}
+          </tem:SearchTrainRoutes>
        </soapenv:Body>
     </soapenv:Envelope>`
 
@@ -27,7 +39,7 @@ async function fetchTrainRoutes() {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml;charset=UTF-8',
-        'SOAPAction': 'http://tempuri.org/ITrainRouteService/GetAllTrainRoutes'
+        'SOAPAction': 'http://tempuri.org/ITrainRouteService/SearchTrainRoutes'
       },
       body: soapXml
     })
@@ -36,7 +48,6 @@ async function fetchTrainRoutes() {
 
     let xmlText = await response.text()
 
-    // --- POPRAWKA MTOM: Wycinamy czysty XML z paczki binarnej ---
     if (xmlText.includes('<s:Envelope')) {
       const start = xmlText.indexOf('<s:Envelope')
       const end = xmlText.lastIndexOf('</s:Envelope>') + '</s:Envelope>'.length
@@ -46,11 +57,9 @@ async function fetchTrainRoutes() {
     const parser = new DOMParser()
     const xmlDoc = parser.parseFromString(xmlText, 'text/xml')
 
-    // 1. Znajdujemy węzły <a:TrainRoute> (ignorujemy namespace przez localName)
     const routeNodes = Array.from(xmlDoc.getElementsByTagName('*'))
       .filter(el => el.localName === 'TrainRoute')
 
-    // 2. Mapujemy węzły na obiekty JS
     trainRoutes.value = routeNodes.map(node => {
       const getValue = (propName) => {
         // Używamy getElementsByTagName, żeby znaleźć pola typu <a:departureCity>
@@ -102,20 +111,74 @@ onMounted(() => {
   <UContainer class="py-10">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dostępne połączenia</h1>
-      <UButton 
-        icon="i-heroicons-arrow-path" 
-        color="gray" 
-        variant="ghost" 
-        :loading="loading" 
-        @click="fetchTrainRoutes"
-      >
-        Odśwież
-      </UButton>
     </div>
+
+    <!-- Formularz wyszukiwania -->
+    <UCard class="mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+        <div>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+            Miasto wyjazdu
+          </label>
+          <UInput 
+            v-model="filters.departureCity"
+            placeholder="np. Warszawa"
+            @keyup.enter="fetchTrainRoutes"
+          />
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+            Miasto przyjazdu
+          </label>
+          <UInput 
+            v-model="filters.arrivalCity"
+            placeholder="np. Kraków"
+            @keyup.enter="fetchTrainRoutes"
+          />
+        </div>
+
+        <div>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+            Data wyjazdu
+          </label>
+          <UInput 
+            v-model="filters.departureDay"
+            type="date"
+            @keyup.enter="fetchTrainRoutes"
+          />
+        </div>
+
+        <div class="flex gap-2">
+          <UButton 
+            icon="i-heroicons-magnifying-glass" 
+            color="primary"
+            :loading="loading"
+            @click="fetchTrainRoutes"
+            block
+          >
+            Szukaj
+          </UButton>
+          <UButton 
+            icon="i-heroicons-x-mark" 
+            color="gray" 
+            variant="soft"
+            @click="() => {
+              filters.departureCity = ''
+              filters.arrivalCity = ''
+              filters.departureDay = null
+              fetchTrainRoutes()
+            }"
+          >
+            Wyczyść
+          </UButton>
+        </div>
+      </div>
+    </UCard>
     
     <div v-if="loading" class="text-center py-10">
       <UIcon name="i-heroicons-arrow-path" class="animate-spin text-4xl text-primary" />
-      <p class="mt-4 text-gray-500">Pobieranie rozkładu jazdy z bazy...</p>
+      <p class="mt-4 text-gray-500">Szukanie tras pociągów...</p>
     </div>
 
     <UAlert 
@@ -172,7 +235,7 @@ onMounted(() => {
       
       <div v-if="trainRoutes.length === 0" class="text-center py-20 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
         <UIcon name="i-heroicons-magnifying-glass" class="text-5xl text-gray-300 mb-2" />
-        <p class="text-gray-500">Brak dostępnych tras w bazie danych pociągów.</p>
+        <p class="text-gray-500">Brak tras spełniających kryteria wyszukiwania.</p>
       </div>
     </div>
   </UContainer>
