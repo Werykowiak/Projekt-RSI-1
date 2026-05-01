@@ -95,19 +95,36 @@ namespace Projekt_RSI_1_BackEnd.services
             }
         }
 
-        public async Task<List<TrainRoute>> SearchTrainRoutes(string departureCity, string arrivalCity, DateTime? departureDay)
+        public async Task<List<TrainRoute>> SearchTrainRoutes(string departureCity, string arrivalCity, DateTime? departureDay, string targetCurrency = "PLN")
         {
             try
             {
                 var query = _context.TrainRoutes.AsQueryable();
+
                 if (!string.IsNullOrEmpty(departureCity))
                     query = query.Where(r => r.departureCity.ToLower().Contains(departureCity.ToLower()));
+
                 if (!string.IsNullOrEmpty(arrivalCity))
                     query = query.Where(r => r.arrivalCity.ToLower().Contains(arrivalCity.ToLower()));
-                if (departureDay.HasValue)
-                    query = query.Where(r => r.departureTime.Date.DayOfYear == departureDay.Value.Date.DayOfYear && r.departureTime.Date.Year == departureDay.Value.Date.Year);
-                return await query.ToListAsync();
 
+                if (departureDay.HasValue)
+                    query = query.Where(r => r.departureTime.Date == departureDay.Value.Date);
+
+                var routes = await query.ToListAsync();
+
+                if (!string.IsNullOrEmpty(targetCurrency) && targetCurrency.ToUpper() != "PLN")
+                {
+                    var currencyClient = new CurrencyServiceReference.CurrencyServiceClient();
+
+                    double multiplier = await currencyClient.GetMultiplierAsync(targetCurrency);
+
+                    foreach (var route in routes)
+                    {
+                        route.price = route.price * (decimal)multiplier;
+                    }
+                }
+
+                return routes;
             }
             catch (Exception)
             {

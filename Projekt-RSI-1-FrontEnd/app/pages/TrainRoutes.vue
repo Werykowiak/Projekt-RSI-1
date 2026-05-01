@@ -5,10 +5,12 @@ const trainRoutes = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const availableCurrencies = ['PLN', 'EUR', 'USD', 'GBP']
 const filters = ref({
   departureCity: '',
   arrivalCity: '',
-  departureDay: null
+  departureDay: null,
+  currency: 'PLN' 
 })
 
 async function fetchTrainRoutes() {
@@ -30,6 +32,7 @@ async function fetchTrainRoutes() {
              <tem:departureCity>${filters.value.departureCity}</tem:departureCity>
              <tem:arrivalCity>${filters.value.arrivalCity}</tem:arrivalCity>
              ${departureDayXml}
+             <tem:targetCurrency>${filters.value.currency}</tem:targetCurrency>
           </tem:SearchTrainRoutes>
        </soapenv:Body>
     </soapenv:Envelope>`
@@ -62,7 +65,6 @@ async function fetchTrainRoutes() {
 
     trainRoutes.value = routeNodes.map(node => {
       const getValue = (propName) => {
-        // Używamy getElementsByTagName, żeby znaleźć pola typu <a:departureCity>
         const elements = node.getElementsByTagName('*')
         const el = Array.from(elements).find(e => e.localName === propName)
         return el ? el.textContent : ''
@@ -113,9 +115,8 @@ onMounted(() => {
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Dostępne połączenia</h1>
     </div>
 
-    <!-- Formularz wyszukiwania -->
     <UCard class="mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
         <div>
           <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
             Miasto wyjazdu
@@ -149,6 +150,22 @@ onMounted(() => {
           />
         </div>
 
+        <div>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
+            Waluta
+          </label>
+          <select 
+            v-model="filters.currency" 
+            @change="fetchTrainRoutes"
+            class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-sm sm:leading-6 px-3"
+          >
+            <option value="PLN">PLN</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+
         <div class="flex gap-2">
           <UButton 
             icon="i-heroicons-magnifying-glass" 
@@ -167,6 +184,7 @@ onMounted(() => {
               filters.departureCity = ''
               filters.arrivalCity = ''
               filters.departureDay = null
+              filters.currency = 'PLN' 
               fetchTrainRoutes()
             }"
           >
@@ -206,7 +224,7 @@ onMounted(() => {
               </span>
               <span class="flex items-center gap-1 font-semibold text-primary">
                 <UIcon name="i-heroicons-banknotes" />
-                {{ route.price }} zł
+                {{ route.price.toFixed(2) }} {{ filters.currency }}
               </span>
               <span class="flex items-center gap-1">
                 <UIcon name="i-heroicons-users" />

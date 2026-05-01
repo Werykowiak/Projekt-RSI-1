@@ -17,6 +17,6 @@ namespace Projekt_RSI_1_BackEnd.Interfaces
         [OperationContract]
         Task<TrainRoute> EditTrainRoute(TrainRoute trainRoute);
         [OperationContract]
-        Task<List<TrainRoute>> SearchTrainRoutes(string departureCity, string arrivalCity, DateTime? departureDate);
+        Task<List<TrainRoute>> SearchTrainRoutes(string departureCity, string arrivalCity, DateTime? departureDate, string targetCurrency = "PLN");
     }
 }

@@ -2,6 +2,8 @@ using CoreWCF;
 using CoreWCF.Channels;
 using CoreWCF.Configuration;
 using CoreWCF.Description;
+using Projekt_RSI_1_Exchanger.Interfaces;
+using Projekt_RSI_1_Exchanger.Services;
 
 namespace Projekt_RSI_1_Exchanger
 {
@@ -21,6 +23,7 @@ namespace Projekt_RSI_1_Exchanger
             });
             builder.Services.AddServiceModelServices();
             builder.Services.AddServiceModelMetadata();
+            builder.Services.AddTransient<ICurrencyService, CurrencyService>();
 
             builder.WebHost.ConfigureKestrel(options =>
             {
@@ -42,12 +45,12 @@ namespace Projekt_RSI_1_Exchanger
                 binding.MessageEncoding = WSMessageEncoding.Mtom;
                 binding.MaxReceivedMessageSize = 10 * 1024 * 1024;
 
+                serviceBuilder.AddService<CurrencyService>();
+                serviceBuilder.AddServiceEndpoint<CurrencyService, ICurrencyService>(binding, "/CurrencyService");
 
                 var metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
                 metadataBehavior.HttpsGetEnabled = true;
 
-                var debugBehavior = app.Services.GetRequiredService<ServiceDebugBehavior>();
-                debugBehavior.IncludeExceptionDetailInFaults = true;
 
             });
 
