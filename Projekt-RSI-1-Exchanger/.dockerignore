@@ -1,0 +1,19 @@
+# Directories
+bin/
+obj/
+node_modules/
+
+# Files
+.git
+.gitignore
+.dockerignore
+docker-compose.yml
+Dockerfile
+*.md
+.env*
+*.user
+.vs/
+.vscode/
+
+# .NET
+*.log
