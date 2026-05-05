@@ -577,3 +577,5 @@ Projekt-RSI-1-BackEnd/Projekt-RSI-1-BackEnd/appsettings.Development.json
 Projekt-RSI-1-FrontEnd/generate-cert.cjs
 Projekt-RSI-1-FrontEnd/localhost.pem
 Projekt-RSI-1-FrontEnd/localhost-key.pem
+certs
+mssql-data

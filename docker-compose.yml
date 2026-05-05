@@ -1,92 +1,70 @@
 version: '3.8'
 
 services:
-  # SQL Server Database
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: rsi-mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Your_password123' -Q 'SELECT 1' -C"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
-      ACCEPT_EULA: 'Y'
-      SA_PASSWORD: 'YourPassword123!'
-      MSSQL_PID: 'Developer'
+      SA_PASSWORD: "Your_password123"
+      ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
     volumes:
-      - mssql_data:/var/opt/mssql
-    networks:
-      - rsi-network
-    healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourPassword123!' -Q 'SELECT 1' -b || exit 1
-      interval: 15s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
+      - ./mssql-data:/var/opt/mssql
+    restart: unless-stopped
 
-  # Backend API Service
   backend:
     build:
       context: ./Projekt-RSI-1-BackEnd
       dockerfile: Dockerfile
-    container_name: rsi-backend
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORT: 8181
-      ConnectionStrings__DBConnection: 'Server=mssql,1433;Database=PROJEKT-RSI-1;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;'
-      Keys__ApiKey: 'GIGATAJNYKLUCZDOAPI'
     ports:
       - "8181:8181"
-    depends_on:
-      mssql:
-        condition: service_healthy
-    networks:
-      - rsi-network
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DBConnection: "Server=mssql;Database=PROJEKT-RSI-1;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /app/aspnetapp.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "CertHaslo"
     volumes:
-      - ./Projekt-RSI-1-BackEnd/Projekt-RSI-1-BackEnd:/app/src
-      - /app/bin
-      - /app/obj
+      - ./certs/backend.pfx:/app/aspnetapp.pfx:ro
+    depends_on:
+      - mssql
+    restart: unless-stopped
 
-  # Exchanger Service
   exchanger:
     build:
       context: ./Projekt-RSI-1-Exchanger
       dockerfile: Dockerfile
-    container_name: rsi-exchanger
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_HTTP_PORT: 8180
     ports:
       - "8180:8180"
-    networks:
-      - rsi-network
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DBConnection: "Server=mssql;Database=PROJEKT-RSI-1;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /app/aspnetapp.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "CertHaslo"
     volumes:
-      - ./Projekt-RSI-1-Exchanger/Projekt-RSI-1-Exchanger:/app/src
-      - /app/bin
-      - /app/obj
+      - ./certs/backend.pfx:/app/aspnetapp.pfx:ro
+    depends_on:
+      - mssql
+    restart: unless-stopped
 
-  # Frontend Service
   frontend:
     build:
       context: ./Projekt-RSI-1-FrontEnd
       dockerfile: Dockerfile
-    container_name: rsi-frontend
-    environment:
-      NODE_ENV: development
     ports:
-      - "3000:3000"
-    networks:
-      - rsi-network
-    volumes:
-      - ./Projekt-RSI-1-FrontEnd:/app
-      - /app/node_modules
-      - /app/.nuxt
+      - "3000:80"
+    environment:
+      PORT: "80"
+      HOST: "0.0.0.0"
     depends_on:
       - backend
       - exchanger
+    restart: unless-stopped
 
 volumes:
-  mssql_data:
+  mssql-data:
     driver: local
-
-networks:
-  rsi-network:
-    driver: bridge

@@ -1,22 +1,33 @@
-FROM node:22-alpine
-
+FROM node:22-alpine AS build
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10.33.0
+RUN corepack enable
 
-# Copy package files
+# Copy package.json and your lockfile
+# Note: .npmrc removed because it's not present in the repo
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm i
 
-# Copy project files
-COPY . .
+# Copy the entire project
+COPY . ./
 
-# Build
+# Build the project
 RUN pnpm run build
 
-EXPOSE 3000
+# Build Stage 2
 
-CMD ["pnpm", "run", "preview"]
+FROM node:22-alpine
+WORKDIR /app
+
+# Only `.output` folder is needed from the build stage
+COPY --from=build /app/.output/ ./
+
+# Change the port and host
+ENV PORT=80
+ENV HOST=0.0.0.0
+
+EXPOSE 80
+
+CMD ["node", "/app/server/index.mjs"]
