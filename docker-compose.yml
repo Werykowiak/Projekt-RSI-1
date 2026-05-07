@@ -3,18 +3,14 @@ version: '3.8'
 services:
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Your_password123' -Q 'SELECT 1' -C"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    user: root
     environment:
-      SA_PASSWORD: "Your_password123"
+      MSSQL_SA_PASSWORD: "MojeNoweHaslo123!"
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
     volumes:
-      - ./mssql-data:/var/opt/mssql
+      - ./mssql-data:/var/opt/mssql/data
     restart: unless-stopped
 
   backend:
@@ -25,9 +21,10 @@ services:
       - "8181:8181"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DBConnection: "Server=mssql;Database=PROJEKT-RSI-1;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
+      ConnectionStrings__DBConnection: "Server=mssql;Database=PROJEKT-RSI-1;User Id=sa;Password=MojeNoweHaslo123!;TrustServerCertificate=True;"
+      Keys__ApiKey: "GIGATAJNYKLUCZDOAPI"
       ASPNETCORE_Kestrel__Certificates__Default__Path: /app/aspnetapp.pfx
-      ASPNETCORE_Kestrel__Certificates__Default__Password: "CertHaslo"
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "YourPfxPassword"
     volumes:
       - ./certs/backend.pfx:/app/aspnetapp.pfx:ro
     depends_on:
@@ -39,16 +36,13 @@ services:
       context: ./Projekt-RSI-1-Exchanger
       dockerfile: Dockerfile
     ports:
-      - "8180:8180"
+      - "8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__DBConnection: "Server=mssql;Database=PROJEKT-RSI-1;User Id=sa;Password=Your_password123;TrustServerCertificate=True;"
       ASPNETCORE_Kestrel__Certificates__Default__Path: /app/aspnetapp.pfx
-      ASPNETCORE_Kestrel__Certificates__Default__Password: "CertHaslo"
+      ASPNETCORE_Kestrel__Certificates__Default__Password: "YourPfxPassword"
     volumes:
       - ./certs/backend.pfx:/app/aspnetapp.pfx:ro
-    depends_on:
-      - mssql
     restart: unless-stopped
 
   frontend:
@@ -56,14 +50,19 @@ services:
       context: ./Projekt-RSI-1-FrontEnd
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "3000:3000"
     environment:
-      PORT: "80"
+      PORT: "3000"
       HOST: "0.0.0.0"
+      NODE_TLS_REJECT_UNAUTHORIZED: "0"
+    volumes:
+      # Montujemy certyfikaty do niezależnego folderu w roocie systemu kontenera
+      - ./certs:/certs:ro
     depends_on:
       - backend
       - exchanger
     restart: unless-stopped
+    
 
 volumes:
   mssql-data:

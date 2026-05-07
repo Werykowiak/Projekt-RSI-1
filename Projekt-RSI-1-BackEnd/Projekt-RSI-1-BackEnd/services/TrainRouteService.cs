@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Projekt_RSI_1_BackEnd.Interfaces;
 using Projekt_RSI_1_BackEnd.Models;
+using System.ServiceModel.Description;
+using System.ServiceModel.Channels;
+using System.ServiceModel.Dispatcher;
 
 namespace Projekt_RSI_1_BackEnd.services
 {
@@ -114,7 +117,22 @@ namespace Projekt_RSI_1_BackEnd.services
 
                 if (!string.IsNullOrEmpty(targetCurrency) && targetCurrency.ToUpper() != "PLN")
                 {
-                    var currencyClient = new CurrencyServiceReference.CurrencyServiceClient();
+                    string exchangerUrl = "https://exchanger:8080/CurrencyService";
+
+                    // 1. Konfiguracja Bindingu (HTTPS)
+                    var binding = new System.ServiceModel.BasicHttpBinding(System.ServiceModel.BasicHttpSecurityMode.Transport);
+
+                    // 2. Definicja Endpointu
+                    var endpoint = new System.ServiceModel.EndpointAddress(exchangerUrl);
+
+                    // 3. NOWOCZESNE ROZWIĄZANIE: Tworzymy klienta
+                    var currencyClient = new ServiceReference1.CurrencyServiceClient(binding, endpoint);
+
+                    // 4. Konfiguracja ignorowania certyfikatów dla HttpClient (wersja dla WCF/CoreWCF)
+                    // W nowych wersjach .NET musimy dostać się do parametrów fabryki
+                    currencyClient.Endpoint.EndpointBehaviors.Add(new CustomCertificateBehavior());
+
+
 
                     double multiplier = await currencyClient.GetMultiplierAsync(targetCurrency);
 
@@ -131,5 +149,27 @@ namespace Projekt_RSI_1_BackEnd.services
                 throw;
             }
         }
+    }
+    public class CustomCertificateBehavior : IEndpointBehavior
+    {
+        // Ta metoda dodaje naszą "magiczną funkcję" ignorowania błędów SSL do HttpClienta
+        public void AddBindingParameters(ServiceEndpoint endpoint, BindingParameterCollection bindingParameters)
+        {
+            bindingParameters.Add(new Func<System.Net.Http.HttpClientHandler, System.Net.Http.HttpClientHandler>(handler =>
+            {
+                // Pozwalamy na każdy certyfikat (ważne w Dockerze)
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+                return handler;
+            }));
+        }
+
+        // Ta metoda musi tu być, ale zostawiamy ją pustą (standard WCF)
+        public void ApplyClientBehavior(ServiceEndpoint endpoint, ClientRuntime clientRuntime) { }
+
+        // POPRAWIONA METODA: Używamy EndpointDispatcher zamiast filtra
+        public void ApplyDispatchBehavior(ServiceEndpoint endpoint, EndpointDispatcher endpointDispatcher) { }
+
+        // Ta metoda również zostaje pusta
+        public void Validate(ServiceEndpoint endpoint) { }
     }
 }

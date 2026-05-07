@@ -16,7 +16,13 @@ namespace Projekt_RSI_1_Exchanger
             {
                 options.AddPolicy("AllowNuxt", policy =>
                 {
-                    policy.WithOrigins("https://localhost:3000")
+                    policy.WithOrigins(
+                        "http://localhost:3000",
+                        "https://localhost:3000",
+                        "https://localhost:8181",
+                        "https://127.0.0.1:8181",
+                        "http://127.0.0.1:3000",
+                        "https://127.0.0.1:3000")
                           .AllowAnyMethod()
                           .AllowAnyHeader();
                 });
@@ -27,9 +33,9 @@ namespace Projekt_RSI_1_Exchanger
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenLocalhost(8180, listenOptions =>
+                options.ListenAnyIP(8080, listenOptions =>
                 {
-                    listenOptions.UseHttps(); // U¿ywa domyœlnego certyfikatu dev .NET
+                    listenOptions.UseHttps(); // U¿ywa domyœlnego certyfikatu dev .NET lub skonfigurowanego PFX
                 });
             });
 
@@ -42,14 +48,14 @@ namespace Projekt_RSI_1_Exchanger
             {
                 var binding = new BasicHttpBinding(BasicHttpSecurityMode.Transport);
                 binding.Security.Transport.ClientCredentialType = HttpClientCredentialType.None;
-                binding.MessageEncoding = WSMessageEncoding.Mtom;
-                binding.MaxReceivedMessageSize = 10 * 1024 * 1024;
+
 
                 serviceBuilder.AddService<CurrencyService>();
                 serviceBuilder.AddServiceEndpoint<CurrencyService, ICurrencyService>(binding, "/CurrencyService");
 
                 var metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
                 metadataBehavior.HttpsGetEnabled = true;
+
 
 
             });

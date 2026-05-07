@@ -29,6 +29,8 @@ namespace Projekt_RSI_1_BackEnd
                     policy.WithOrigins(
                         "http://localhost:3000",
                         "https://localhost:3000",
+                        "https://localhost:8180",
+                        "https://127.0.0.1:8180",
                         "http://127.0.0.1:3000",
                         "https://127.0.0.1:3000")
                           .AllowAnyMethod()
@@ -43,14 +45,11 @@ namespace Projekt_RSI_1_BackEnd
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                // HTTPS endpoint (existing)
                 options.ListenAnyIP(8181, listenOptions =>
                 {
                     listenOptions.UseHttps(); // Używa domyślnego certyfikatu dev .NET lub skonfigurowanego PFX
                 });
 
-                // HTTP endpoint for local development to avoid cert issues in browser
-                options.ListenAnyIP(8080);
             });
 
             var app = builder.Build();
@@ -65,10 +64,6 @@ namespace Projekt_RSI_1_BackEnd
                 binding.MessageEncoding = WSMessageEncoding.Mtom;
                 binding.MaxReceivedMessageSize = 10 * 1024 * 1024;
 
-                // HTTP binding without transport security for local development
-                var httpBinding = new BasicHttpBinding(BasicHttpSecurityMode.None);
-                httpBinding.MessageEncoding = WSMessageEncoding.Mtom;
-                httpBinding.MaxReceivedMessageSize = 10 * 1024 * 1024;
 
                 serviceBuilder.AddService<TrainRouteService>();
                 serviceBuilder.ConfigureServiceHostBase<TrainRouteService>(host =>
@@ -77,20 +72,23 @@ namespace Projekt_RSI_1_BackEnd
                     host.Description.Behaviors.Add(new ApiKeyBehavior(apiKeyFromConfig));
                 });
                 serviceBuilder.AddServiceEndpoint<TrainRouteService, ITrainRouteService>(binding, "/TrainRouteService");
-                serviceBuilder.AddServiceEndpoint<TrainRouteService, ITrainRouteService>(httpBinding, "/TrainRouteService");
 
                 serviceBuilder.AddService<ReservationService>();
                 serviceBuilder.AddServiceEndpoint<ReservationService, IReservationService>(binding, "/ReservationService");
-                serviceBuilder.AddServiceEndpoint<ReservationService, IReservationService>(httpBinding, "/ReservationService");
 
                 var metadataBehavior = app.Services.GetRequiredService<ServiceMetadataBehavior>();
                 metadataBehavior.HttpsGetEnabled = true;
-                metadataBehavior.HttpGetEnabled = true;
 
                 var debugBehavior = app.Services.GetRequiredService<ServiceDebugBehavior>();
                 debugBehavior.IncludeExceptionDetailInFaults = true;
 
             });
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                // Ta metoda automatycznie utworzy bazę i wszystkie tabele na podstawie Twoich migracji
+                dbContext.Database.Migrate();
+            }
             app.Run();
         }
     }

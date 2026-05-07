@@ -7,12 +7,12 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CurrencyServiceReference
+namespace ServiceReference1
 {
     
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="CurrencyServiceReference.ICurrencyService")]
+    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="ServiceReference1.ICurrencyService")]
     public interface ICurrencyService
     {
         
@@ -21,13 +21,13 @@ namespace CurrencyServiceReference
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public interface ICurrencyServiceChannel : CurrencyServiceReference.ICurrencyService, System.ServiceModel.IClientChannel
+    public interface ICurrencyServiceChannel : ServiceReference1.ICurrencyService, System.ServiceModel.IClientChannel
     {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Tools.ServiceModel.Svcutil", "8.0.0")]
-    public partial class CurrencyServiceClient : System.ServiceModel.ClientBase<CurrencyServiceReference.ICurrencyService>, CurrencyServiceReference.ICurrencyService
+    public partial class CurrencyServiceClient : System.ServiceModel.ClientBase<ServiceReference1.ICurrencyService>, ServiceReference1.ICurrencyService
     {
         
         /// <summary>
@@ -95,7 +95,6 @@ namespace CurrencyServiceReference
                 result.MaxBufferSize = int.MaxValue;
                 result.ReaderQuotas = System.Xml.XmlDictionaryReaderQuotas.Max;
                 result.MaxReceivedMessageSize = int.MaxValue;
-                result.MessageEncoding = System.ServiceModel.WSMessageEncoding.Mtom;
                 result.AllowCookies = true;
                 result.Security.Mode = System.ServiceModel.BasicHttpSecurityMode.Transport;
                 return result;
@@ -107,7 +106,7 @@ namespace CurrencyServiceReference
         {
             if ((endpointConfiguration == EndpointConfiguration.BasicHttpBinding_ICurrencyService))
             {
-                return new System.ServiceModel.EndpointAddress("https://localhost:8180/CurrencyService");
+                return new System.ServiceModel.EndpointAddress("https://localhost:8080/CurrencyService");
             }
             throw new System.InvalidOperationException(string.Format("Nie można znaleźć punktu końcowego o nazwie „{0}”.", endpointConfiguration));
         }
